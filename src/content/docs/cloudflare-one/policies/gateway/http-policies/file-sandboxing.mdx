@@ -13,7 +13,9 @@ Only available on Enterprise plans. For more information, contact your account t
 
 In addition to [anti-virus (AV) scanning](/cloudflare-one/policies/gateway/http-policies/antivirus-scanning/), Gateway can quarantine previously unseen files downloaded by your users into a sandbox and scan them for malware.
 
-When your users download a file, Gateway will first scan the file with AV scanning. If AV scanning detects malware, Gateway will block the download and log the result. If AV scanning does not detect malware, Gateway will send the file to the sandbox. While in the sandbox, Gateway will monitor the inputs and outputs of the file. While the files are quarantined, Gateway will present a scanning page to your users. If a file passes scanning, Gateway will release the file from quarantine and download it to your user's device. If the file contains malware, Gateway will block the request and log the match as a Block decision in your [HTTP logs](/cloudflare-one/insights/logs/gateway-logs/#http-logs).
+If AV scanning does not detect malware in a file download, Gateway will quarantine the file in the sandbox. If the file has not been downloaded before, Gateway will monitor the inputs and outputs of the file and display an interstitial page for the user. If the sandbox does not detect malicious activity, Gateway will release the file from quarantine and download it to your user's device. If the sandbox detects malicious activity, Gateway will block the download. For any subsequent downloads of the file, Gateway will remember and apply the allow/block decision.
+
+Gateway will log any file sandbox decisions in your [HTTP logs](/cloudflare-one/insights/logs/gateway-logs/#http-logs).
 
 ```mermaid
 flowchart TD
@@ -21,21 +23,23 @@ flowchart TD
     B --> C["Malicious file detected?"]
     C -- Yes --> D["Download blocked"]
     C -- No --> G["File sent to sandbox"]
-    G --> n1["First time file appears?"]
+    G --> n1["First time file downloaded?"]
     K["Malicious activity detected?"] -- Yes --> N["Download blocked"]
     K -- No --> n3["Download allowed"]
-    n1 -- Yes --> n2["Interstitial page displayed for user during scan"]
-    n2 --> K
+    n2["Interstitial page displayed for user during scan"] --> n4["File activity monitored"]
+    n1 -- Yes --> n2
+    n4 --> K
     n1 -- No --> K
 
     B@{ shape: subproc}
-    C@{ shape: diam}
+    C@{ shape: hex}
     D@{ shape: terminal}
-    n1@{ shape: diam}
-    K@{ shape: diam}
+    n1@{ shape: hex}
+    K@{ shape: hex}
     N@{ shape: terminal}
     n3@{ shape: terminal}
     n2@{ shape: display}
+    n4@{ shape: rect}
     style D stroke:#D50000
     style N stroke:#D50000
     style n3 stroke:#00C853
